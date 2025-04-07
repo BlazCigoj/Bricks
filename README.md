@@ -40,6 +40,16 @@ HTML5: For the game structure and canvas element.
 CSS3: For styling and glowing effects.
 JavaScript: For game logic, animations, and interactivity.
 
+## Screenshots
+
+- The game:
+![image](https://github.com/user-attachments/assets/13960bef-c058-4436-becd-8c967b9023f0)
+
+- Animations:
+![image](https://github.com/user-attachments/assets/857b2c42-b132-48cc-be64-58e748212126)
+
+
+
 ## Credits
 Developed by Blaž Cigoj.
 
