@@ -45,7 +45,8 @@ JavaScript: For game logic, animations, and interactivity.
 - The game:
 
 
-![image](https://github.com/user-attachments/assets/13960bef-c058-4436-becd-8c967b9023f0)
+![image](https://github.com/user-attachments/assets/f69355c1-46de-4e5e-b049-7fc84d73f919)
+
 
 - Animations:
 
