@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="images/favicon.png" type="image/x-icon">
+    <style>
+        canvas {
+            display: block;
+            margin: auto;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000033;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #gameContainer {
+            text-align: center;
+            position: fixed;
+            top: 280px;
+        }
+
+        #backgroundCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #myCanvas {
+            position: relative;
+            z-index: 1;
+        }
+
+        #startButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #1E1E2F;
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #FFD700;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #startButton:hover {
+            background-color: #4B0082;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FFD700;
+        }
+
+        #stopButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #1E1E2F;
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #FFD700;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #stopButton:hover {
+            background-color: #4B0082;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FFD700;
+        }
+
+        #startButton:hover {
+            background-color: #8A2BE2;
+        }
+
+        #creditsButton {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #1E1E2F;
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #FFD700;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #creditsButton:hover {
+            background-color: #4B0082;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FFD700;
+        }
+
+        #header {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            font-family: 'Orbitron', sans-serif;
+            color: #FFD700;
+            text-shadow: 0 0 15px #FFD700, 0 0 30px #4B0082, 0 0 45px #1E90FF;
+            background: linear-gradient(90deg, rgba(30, 30, 47, 0.9), rgba(0, 0, 64, 0.9));
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 10px 20px;
+            box-shadow: 0 0 20px #FFD700, 0 0 40px #4B0082;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #header:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 0 30px #FFD700, 0 0 60px #4B0082, 0 0 90px #1E90FF;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="header">Space Bricks</h1>
+    <div id="gameContainer">
+        <canvas id="backgroundCanvas" width="480" height="320"></canvas>
+        <canvas id="myCanvas" width="480" height="320"></canvas>
+        <button id="startButton">Start Game</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        var x = canvas.width / 2;
+        var y = canvas.height - 30;
+        var dx = 3;
+        var dy = -3;
+        var ballRadius = 10;
+        var paddleHeight = 10;
+        var paddleWidth = 70;
+        var paddleX = (canvas.width - paddleWidth) / 2;
+        var rightPressed = false;
+        var leftPressed = false;
+        var brickRowCount = 3;
+        var brickColumnCount = 5;
+        var brickWidth = 75;
+        var brickHeight = 20;
+        var brickPadding = 10;
+        var brickOffsetTop = 30;
+        var brickOffsetLeft = 30;
+        var score = 0;
+        var bricks = [];
+        var gameRunning = false;
+
+        document.body.style.backgroundImage = "url('images/Space.jpg')";
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundPosition = "center";
+        document.body.style.backgroundRepeat = "no-repeat";
+
+
+
+        var backgroundCanvas = document.getElementById("backgroundCanvas");
+        var bgCtx = backgroundCanvas.getContext("2d");
+        var stars = [];
+
+        for (var i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * backgroundCanvas.width,
+                y: Math.random() * backgroundCanvas.height,
+                radius: Math.random() * 2,
+                alpha: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        function drawBackground() {
+            bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            bgCtx.fillStyle = "#001a33";
+            bgCtx.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+
+            stars.forEach(function (star) {
+                bgCtx.beginPath();
+                bgCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                bgCtx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                bgCtx.fill();
+                bgCtx.closePath();
+            });
+        }
+
+        setInterval(drawBackground, 50);
+
+        for (var c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (var r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = { x: 0, y: 0, hitsLeft: 1 };
+            }
+        }
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+        document.getElementById("startButton").addEventListener("click", startGame);
+
+        var stopButton = document.createElement("button");
+        stopButton.id = "stopButton";
+        stopButton.textContent = "Stop Game";
+        stopButton.style.marginLeft = "10px";
+        stopButton.style.padding = "10px 20px";
+        stopButton.style.fontSize = "16px";
+        stopButton.style.color = "#FFD700";
+        stopButton.style.border = "1px solid #FFD700";
+        stopButton.style.borderRadius = "5px";
+        stopButton.style.cursor = "pointer";
+        stopButton.style.display = "inline-block";
+        stopButton.style.boxShadow = "0 0 10px #FFD700";
+        stopButton.addEventListener("click", stopGame);
+        document.getElementById("gameContainer").appendChild(stopButton);
+
+        function keyDownHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = true;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = false;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                draw();
+            }
+        }
+
+        function stopGame() {
+            gameRunning = false;
+        }
+
+        function drawBall() {
+            var gradient = ctx.createRadialGradient(x, y, ballRadius / 4, x, y, ballRadius);
+            gradient.addColorStop(0, "#FFFF00");
+            gradient.addColorStop(0.5, "#FFD700");
+            gradient.addColorStop(1, "rgba(255, 69, 0, 0.8)");
+
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+
+        function drawPaddle() {
+            var gradient = ctx.createLinearGradient(paddleX, canvas.height - paddleHeight, paddleX + paddleWidth, canvas.height);
+            gradient.addColorStop(0, "#FF6347");
+            gradient.addColorStop(0.5, "#FFD700");
+            gradient.addColorStop(1, "#FF4500");
+
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for (var c = 0; c < brickColumnCount; c++) {
+                for (var r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].hitsLeft > 0) {
+                        var brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                        var brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        var brickImage = new Image();
+                        brickImage.src = "images/asteroid.png";
+                        ctx.drawImage(brickImage, brickX, brickY, brickWidth, brickHeight);
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        function collisionDetection() {
+            let destroyedBricks = 0;
+
+            for (var c = 0; c < brickColumnCount; c++) {
+                for (var r = 0; r < brickRowCount; r++) {
+                    var b = bricks[c][r];
+
+                    if (b.hitsLeft > 0) {
+                        var brickX = b.x;
+                        var brickY = b.y;
+
+                        var nextX = x + dx;
+                        var nextY = y + dy;
+
+                        if (
+                            nextX + ballRadius > brickX &&
+                            nextX - ballRadius < brickX + brickWidth &&
+                            nextY + ballRadius > brickY &&
+                            nextY - ballRadius < brickY + brickHeight
+                        ) {
+                            var prevX = x;
+                            var prevY = y;
+
+                            var collidedFromLeft = prevX + ballRadius <= brickX;
+                            var collidedFromRight = prevX - ballRadius >= brickX + brickWidth;
+                            var collidedFromTop = prevY + ballRadius <= brickY;
+                            var collidedFromBottom = prevY - ballRadius >= brickY + brickHeight;
+
+                            if (collidedFromLeft || collidedFromRight) {
+                                dx = -dx;
+                            } else if (collidedFromTop || collidedFromBottom) {
+                                dy = -dy;
+                            } else {
+                                dy = -dy;
+                            }
+
+                            b.hitsLeft--;
+                            if (b.hitsLeft === 0) {
+                                score++;
+                                createExplosion(brickX + brickWidth / 2 - 5, brickY + brickHeight / 2 - 43);
+                            }
+                        }
+                    }
+
+                    if (b.hitsLeft === 0) {
+                        destroyedBricks++;
+                    }
+                }
+            }
+
+            if (destroyedBricks === brickRowCount * brickColumnCount && gameRunning) {
+                gameRunning = false;
+                Swal.fire({
+                    title: 'Congratulations!',
+                    text: 'You destroyed all the bricks!',
+                    icon: 'success',
+                    confirmButtonText: 'Play Again',
+                    background: '#1E1E2F',
+                    color: '#FFD700',
+                    confirmButtonColor: '#4B0082'
+                }).then(() => {
+                    document.location.reload();
+                });
+            }
+        }
+
+        canvas.addEventListener("mousemove", mouseMoveHandler, false);
+
+
+
+        function mouseMoveHandler(e) {
+            var rect = canvas.getBoundingClientRect();
+            var relativeX = e.clientX - rect.left;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        }
+
+        function drawScore() {
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillText("Score: " + score, 8, 20);
+        }
+
+        function draw() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawScore();
+            collisionDetection();
+
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            } else if (y + dy > canvas.height - ballRadius - paddleHeight) {
+                if (y + dy > canvas.height - ballRadius - paddleHeight) {
+                    if (x > paddleX && x < paddleX + paddleWidth) {
+                        // Modify dx based on the ball's position relative to the paddle
+                        dx = 8 * ((x - (paddleX + paddleWidth / 2)) / paddleWidth);
+                        dy = -Math.abs(dy);  // The ball will bounce back
+                        y = canvas.height - ballRadius - paddleHeight;
+                    } else if (y + dy > canvas.height - ballRadius) {
+                        gameRunning = false;
+                        Swal.fire({
+                            title: 'Game Over',
+                            text: 'You lost! Try again.',
+                            icon: 'error',
+                            confirmButtonText: 'Restart',
+                            background: '#1E1E2F',
+                            color: '#FFD700',
+                            confirmButtonColor: '#4B0082'
+                        }).then(() => {
+                            document.location.reload();
+                        });
+                    }
+                }
+
+            }
+            if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                paddleX += 7;
+            } else if (leftPressed && paddleX > 0) {
+                paddleX -= 7;
+            }
+
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+
+        canvas.style.boxShadow = "0 0 10px 2px #FFFFFF, 0 0 20px 4px #4B0082";
+        backgroundCanvas.style.boxShadow = "0 0 10px 2px #FFFFFF, 0 0 20px 4px #4B0082";
+
+        var creditsButton = document.createElement("button");
+        creditsButton.id = "creditsButton";
+        creditsButton.innerHTML = "Credits";
+        creditsButton.style.position = "absolute";
+        creditsButton.style.bottom = "10px";
+        creditsButton.style.right = "10px";
+        creditsButton.style.padding = "10px 20px";
+        creditsButton.style.fontSize = "16px";
+        creditsButton.style.backgroundColor = "#1E1E2F";
+        creditsButton.style.color = "#FFD700";
+        creditsButton.style.border = "1px solid #FFD700";
+        creditsButton.style.borderRadius = "5px";
+        creditsButton.style.cursor = "pointer";
+        creditsButton.style.boxShadow = "0 0 10px #FFD700";
+        creditsButton.style.transition = "transform 0.2s, box-shadow 0.2s";
+        creditsButton.addEventListener("mouseover", function () {
+            creditsButton.style.backgroundColor = "#4B0082";
+            creditsButton.style.transform = "scale(1.1)";
+            creditsButton.style.boxShadow = "0 0 20px #FFD700";
+        });
+        creditsButton.addEventListener("mouseout", function () {
+            creditsButton.style.backgroundColor = "#1E1E2F";
+            creditsButton.style.transform = "scale(1)";
+            creditsButton.style.boxShadow = "0 0 10px #FFD700";
+        });
+        document.body.appendChild(creditsButton);
+
+        creditsButton.addEventListener("click", function () {
+            Swal.fire({
+                title: 'Credits',
+                text: 'Game developed by Blaz Cigoj. Thanks for playing!',
+                icon: 'info',
+                confirmButtonText: 'Close',
+                background: '#1E1E2F',
+                color: '#FFD700',
+                confirmButtonColor: '#4B0082'
+            });
+        });
+
+        function createExplosion(x, y) {
+            var explosion = document.createElement("img");
+            explosion.src = "images/animation.gif";
+            explosion.style.position = "absolute";
+            explosion.style.width = "50px";
+            explosion.style.height = "50px";
+            explosion.style.left = (x + canvas.offsetLeft + 700) + "px";
+            explosion.style.top = (y + canvas.offsetTop + 300) + "px";
+            explosion.style.pointerEvents = "none";
+            document.body.appendChild(explosion);
+
+            setTimeout(function () {
+                document.body.removeChild(explosion);
+            }, 500);
+        }
+
+    </script>
+</body>
+
+</html>
